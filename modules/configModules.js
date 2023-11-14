@@ -1,13 +1,14 @@
 const { Composer, MemorySessionStorage, session } = require("grammy");
 const { Menu, MenuRange } = require("@grammyjs/menu");
 const { I18n, hears } = require("@grammyjs/i18n");
+const { chatMembers } = require("@grammyjs/chat-members");
 const {
     conversations,
 } = require("@grammyjs/conversations");
 const { check_user, register_user, remove_user, set_user_lang } = require("../controllers/userController");
+const adapter = new MemorySessionStorage();
 
-
-const config_bot = new Composer();
+const bot = new Composer();
 
 const i18n = new I18n({
     defaultLocale: "uz",
@@ -17,9 +18,9 @@ const i18n = new I18n({
         return { first_name: ctx.from?.first_name ?? "" };
     },
 });
-config_bot.use(i18n);
+bot.use(i18n);
 
-config_bot.use(session({
+bot.use(session({
     type: "multi",
     session_db: {
         initial: () => {
@@ -36,30 +37,73 @@ config_bot.use(session({
     __language_code: {},
 }));
 
-config_bot.use(conversations());
+bot.use(chatMembers(adapter));
+bot.use(conversations());
 
-config_bot.on("my_chat_member", async (ctx) => {
-    if (ctx.update.my_chat_member.new_chat_member.status == "kicked") {
+bot.on("my_chat_member", async (ctx) => {
+    const status = ctx.update.my_chat_member.new_chat_member.status
+    if (status === "kicked") {
         const stats = await ctx.conversation.active();
         for (let key of Object.keys(stats)) {
             await ctx.conversation.exit(key);
         }
         await remove_user(ctx.from.id)
+    }else if(status === "administrator"){
+        let data = {
+            telegram_id: ctx.update.my_chat_member.chat.id,
+            user_id: ctx.update.my_chat_member.from.id,
+            title: ctx.update.my_chat_member.chat.title,
+            username: ctx.update.my_chat_member.chat.username,
+            type: ctx.update.my_chat_member.chat.type,
+            new_chat: ctx.update.my_chat_member.new_chat_member, // object
+        }
+
+        console.log(data)
+    }else if(status === "left" || status=== "member"){
+        let telegram_id = ctx.update.my_chat_member.chat.id;
+
     }
 
 });
 
-config_bot.use(async (ctx, next) => {
-    if (false) {
+bot.use(async (ctx, next) => {
+    const super_admin_list = [];
+    const command_list = []
+    if (command_list.includes(ctx.message?.text)) {
         const stats = await ctx.conversation.active();
         for (let key of Object.keys(stats)) {
             await ctx.conversation.exit(key);
         }
     }
     ctx.config = {
-        is_admin: true
+        super_admin: super_admin_list.includes(ctx.from?.id)
     }
+
+
+
+    let lang = await ctx.i18n.getLocale();
+    if (!i18n.locales.includes(lang)) {
+        await ctx.i18n.setLocale("uz");
+        ctx.config.lang ='uz';
+    }else{
+        ctx.config.lang =lang;
+    }
+
+
+    // check user join to channel
+
+
     await next()
+})
+
+
+bot.chatType("private").use(async (ctx, next)=>{
+    let channel_id =  -1001704079922;
+    const chatMembers = await ctx.chatMembers.getChatMember(channel_id, ctx.from.id)
+    console.log(chatMembers.status)
+
+    await ctx.reply("Please join channel!")
+    // await next()
 })
 
 
@@ -86,5 +130,4 @@ config_bot.use(async (ctx, next) => {
 
 
 
-
-module.exports = {config_bot}
+module.exports = bot

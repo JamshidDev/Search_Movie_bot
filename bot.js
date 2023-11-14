@@ -13,7 +13,7 @@ const customLogger = require("./config/customLogger");
 // modules
 
 const {client_bot} = require("./modules/clientModules");
-const {config_bot} = require("./modules/configModules")
+const config_bot = require("./modules/configModules")
 
 const bot_token = process.env.BOT_TOKEN;
 const payme_tokent = process.env.PAYME_PROVIDER_TOKEN;
@@ -46,4 +46,7 @@ bot.catch((err) => {
 
 
 
-bot.start();
+bot.start({
+    // Make sure to specify the desired update types
+    allowed_updates: ["my_chat_member", "chat_member", "message", "callback_query", "inline_query"],
+});
