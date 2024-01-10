@@ -8,6 +8,8 @@ const {
     createConversation,
 } = require("@grammyjs/conversations");
 
+const movieController = require("../controllers/movieController")
+
 
 const pm = bot.chatType("private");
 
@@ -53,6 +55,8 @@ async function upload_movie(conversation, ctx){
         } while (!(ctx.message?.text && !isNaN(ctx.message.text)));
     }
 
+    ctx.session.session_db.movie.code = ctx.message.text
+
     await ctx.reply(" <b>✍️ Kino sonini yozing</b>\n\n <i>Masalan: <b>1; 2; 3</b></i> ", {
         parse_mode: "HTML",
     });
@@ -67,19 +71,21 @@ async function upload_movie(conversation, ctx){
         } while (!(ctx.message?.text && !isNaN(ctx.message.text) && ctx.message.text != '0'));
     }
 
-    for(let count=0; count<3; count++){
+    const movieCount = +ctx.message.text
+
+    for(let i=0; i<movieCount; i++){
         let movie = {
             name:null,
             url:null,
         }
-        await ctx.reply(" <b>✍️ Kino nomini yozing</b>\n\n <i>Masalan: <b>Kapitan America</b></i> ", {
+        await ctx.reply(` <b>✍️ ${i + 1} - kino nomini yozing</b>\n\n <i>Masalan: <b>Kapitan America</b></i> `, {
             parse_mode: "HTML",
         });
 
         ctx = await conversation.wait();
         if (!ctx.message?.text) {
             do {
-                await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot kiritildi</b>\n\n <i>Kino nomini yozing!</i> ", {
+                await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot yuborildi</b>\n\n <i>Kino nomini yozing!</i> ", {
                     parse_mode: "HTML",
                 });
                 ctx = await conversation.wait();
@@ -99,11 +105,24 @@ async function upload_movie(conversation, ctx){
                 ctx = await conversation.wait();
             } while (!ctx.message?.video);
         }
-        console.log(ctx.message)
-
+        movie.url = ctx.message.video.thumbnail.file_id;
+        ctx.session.session_db.movie.movie_list.push(movie)
 
     }
-
+    let data = {
+        code:ctx.session.session_db.movie.code,
+        movies:ctx.session.session_db.movie.movie_list,
+    }
+    console.log(data)
+    ctx.reply("⏰ Yuklanmoqda...")
+    const status = await movieController.store(data);
+    if(status){
+        await ctx.reply("✅ Muvofaqiyatli yuklandi...");
+        await base_menu(conversation, ctx)
+    }else{
+        await ctx.reply("⚠️ Server xatosi")
+        await base_menu(conversation, ctx)
+    }
 }
 
 bot.command("start", async (ctx)=>{

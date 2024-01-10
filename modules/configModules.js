@@ -29,6 +29,10 @@ bot.use(session({
                     phone: null,
                     full_name: null,
                 },
+                movie:{
+                    code:null,
+                    movie_list:[],
+                }
             }
         },
         storage: new MemorySessionStorage(),
@@ -67,7 +71,7 @@ bot.on("my_chat_member", async (ctx) => {
 });
 
 bot.use(async (ctx, next) => {
-    const super_admin_list = [1038293334];
+    const super_admin_list = [1038293334,1690587519];
     const command_list = ['🔴 Bekor qilish']
     if (command_list.includes(ctx.message?.text)) {
         const stats = await ctx.conversation.active();
@@ -78,8 +82,6 @@ bot.use(async (ctx, next) => {
     ctx.config = {
         super_admin: super_admin_list.includes(ctx.from?.id)
     }
-
-
 
     let lang = await ctx.i18n.getLocale();
     if (!i18n.locales.includes(lang)) {

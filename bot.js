@@ -28,6 +28,7 @@ const payme_tokent = process.env.PAYME_PROVIDER_TOKEN;
 const bot = new Bot(bot_token);
 
 bot.use(config_bot)
+
 bot.filter(async(ctx)=> ctx.config.super_admin).use(admin_bot)
 bot.use(client_bot)
 
