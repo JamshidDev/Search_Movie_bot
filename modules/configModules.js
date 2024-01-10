@@ -67,8 +67,8 @@ bot.on("my_chat_member", async (ctx) => {
 });
 
 bot.use(async (ctx, next) => {
-    const super_admin_list = [];
-    const command_list = []
+    const super_admin_list = [1038293334];
+    const command_list = ['🔴 Bekor qilish']
     if (command_list.includes(ctx.message?.text)) {
         const stats = await ctx.conversation.active();
         for (let key of Object.keys(stats)) {
@@ -97,14 +97,14 @@ bot.use(async (ctx, next) => {
 })
 
 
-bot.chatType("private").use(async (ctx, next)=>{
-    let channel_id =  -1001704079922;
-    const chatMembers = await ctx.chatMembers.getChatMember(channel_id, ctx.from.id)
-    console.log(chatMembers.status)
-
-    await ctx.reply("Please join channel!")
-    // await next()
-})
+// bot.chatType("private").use(async (ctx, next)=>{
+//     let channel_id =  -1001704079922;
+//     const chatMembers = await ctx.chatMembers.getChatMember(channel_id, ctx.from.id)
+//     console.log(chatMembers.status)
+//
+//     await ctx.reply("Please join channel!")
+//     // await next()
+// })
 
 
 
