@@ -72,13 +72,43 @@ pm.command("start", async (ctx) => {
         data.lang = lang;
         await register_user(data);
     }
-    await ctx.reply(ctx.t("start_hello_msg", {
-        full_name: ctx.from.first_name,
-        organization_name: "Fashion Market"
-    }), {
-        parse_mode: "HTML",
-        reply_markup: language_menu
+
+    await  ctx.reply(`
+<i>
+<b> 🎥 Xush kelibsiz botimizga 🎥</b>
+
+Assalomu alaykum <a href="tg://user?id=${ctx.from.id}"> ${ctx.from.first_name}.</a></i>
+✍️ Kino kodini yozib yuboring!    
+    `,{
+        parse_mode:"HTML"
     })
+})
+
+pm.on("msg:text", async (ctx)=>{
+    let movie_list = [
+        {
+            name:"Yengilmas [1-qism]",
+            url:'AAMCAQADGQEAAhFoZZ_89jbZzs1YV9pyhm7T6mw2LQYAAs8CAAKH1wlFLcy23P2ZTF8BAAdtAAM0BA'
+        },
+        {
+            name:"Yengilmas [1-qism]",
+            url:'AAMCAQADGQEAAhFoZZ_89jbZzs1YV9pyhm7T6mw2LQYAAs8CAAKH1wlFLcy23P2ZTF8BAAdtAAM0BA'
+        },
+    ]
+    let movie_code = ctx.msg?.text;
+    let user_id = ctx.from.id;
+    if(movie_code){
+
+        let count_movies = movie_list.length;
+        for(let i=0; i<count_movies; i++){
+            await ctx.replyWithVideo('AAMCAQADGQEAAhFoZZ_89jbZzs1YV9pyhm7T6mw2LQYAAs8CAAKH1wlFLcy23P2ZTF8BAAdtAAM0BA',{
+                caption:movie_list[i].name,
+                parse_mode:"HTML"
+            })
+        }
+    }
+
+    await ctx.reply("Kino topilmadi")
 })
 
 
