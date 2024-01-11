@@ -7,7 +7,7 @@ const {
 } = require("@grammyjs/conversations");
 const { check_user, register_user, remove_user, set_user_lang } = require("../controllers/userController");
 const adapter = new MemorySessionStorage();
-
+const channelController = require("../controllers/channelController")
 const bot = new Composer();
 
 const i18n = new I18n({
@@ -52,20 +52,21 @@ bot.on("my_chat_member", async (ctx) => {
             await ctx.conversation.exit(key);
         }
         await remove_user(ctx.from.id)
-    }else if(status === "administrator"){
-        let data = {
-            telegram_id: ctx.update.my_chat_member.chat.id,
-            user_id: ctx.update.my_chat_member.from.id,
-            title: ctx.update.my_chat_member.chat.title,
-            username: ctx.update.my_chat_member.chat.username,
-            type: ctx.update.my_chat_member.chat.type,
-            new_chat: ctx.update.my_chat_member.new_chat_member, // object
-        }
+    }
+    let data = {
+        telegram_id: ctx.update.my_chat_member.chat.id,
+        user_id: ctx.update.my_chat_member.from.id,
+        title: ctx.update.my_chat_member.chat.title,
+        username: ctx.update.my_chat_member.chat.username,
+        type: ctx.update.my_chat_member.chat.type,
+        new_chat: ctx.update.my_chat_member.new_chat_member, // object
+    }
 
-        console.log(data)
+    if(status === "administrator"){
+        await  channelController.store(data);
     }else if(status === "left" || status=== "member"){
         let telegram_id = ctx.update.my_chat_member.chat.id;
-
+        await  channelController.remove_item(telegram_id)
     }
 
 });
