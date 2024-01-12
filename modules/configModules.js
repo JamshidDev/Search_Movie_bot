@@ -32,7 +32,9 @@ bot.use(session({
                 movie:{
                     code:null,
                     movie_list:[],
-                }
+                },
+                channel_list:[],
+                all_channel_list:[],
             }
         },
         storage: new MemorySessionStorage(),
@@ -63,7 +65,7 @@ bot.on("my_chat_member", async (ctx) => {
     }
 
     if(status === "administrator"){
-        await  channelController.store(data);
+        await  channelController.store_item(data);
     }else if(status === "left" || status=== "member"){
         let telegram_id = ctx.update.my_chat_member.chat.id;
         await  channelController.remove_item(telegram_id)
@@ -100,14 +102,102 @@ bot.use(async (ctx, next) => {
 })
 
 
-// bot.chatType("private").use(async (ctx, next)=>{
-//     let channel_id =  -1001704079922;
-//     const chatMembers = await ctx.chatMembers.getChatMember(channel_id, ctx.from.id)
-//     console.log(chatMembers.status)
-//
-//     await ctx.reply("Please join channel!")
-//     // await next()
-// })
+
+
+const channel_menu = new Menu("language_menu")
+    .dynamic(async (ctx, range) => {
+        let list =ctx.session.session_db.channel_list
+        list.forEach((item) => {
+            range
+                .url("➕ Obuna bo'lish", `https://t.me/${item.username}`)
+                .row()
+
+        })
+    }).text("✅ Tasdiqlash", async (ctx)=>{
+
+        let list = ctx.session.session_db.all_channel_list;
+        let is_all_channel_subscribe = true;
+
+
+        for(let i=0; i<list.length; i++){
+            let channel = list[i];
+            const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
+            if(chatMembers.status ==='left'){
+                await ctx.answerCallbackQuery(  {
+                    callback_query_id:ctx.callbackQuery.id,
+                    text:"⚠️ Siz barcha kanallarga obuna bo'lmagansiz!",
+                    show_alert:true
+                })
+                is_all_channel_subscribe = false
+
+                break;
+            }
+        }
+
+        if(is_all_channel_subscribe){
+            await ctx.deleteMessage()
+            await ctx.reply(`
+<b>Botdan foydalanishingiz mumkin!</b>
+
+<i>Kino kodini yozib yuboring</i>            
+            `,{})
+            parse_mode:"HTML "
+        }
+
+
+
+
+
+
+    })
+bot.use(channel_menu)
+
+bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async (ctx, next)=>{
+    let channel_list = await channelController.index_item({
+        active:true,
+        ad:true
+    })
+
+    if(channel_list.length>0){
+        let list = channel_list.map((item)=>{
+            return {
+                channel_id:item.telegram_id,
+                _id:item._id,
+                username:item.username
+            }
+        })
+
+        ctx.session.session_db.channel_list = [];
+        ctx.session.session_db.all_channel_list = list;
+        for(let i=0; i<list.length; i++){
+            let channel = list[i];
+            const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
+            if(chatMembers.status ==='left'){
+                ctx.session.session_db.channel_list.push(channel)
+            }
+        }
+
+        if(ctx.session.session_db.channel_list.length>0){
+            await ctx.reply("⚠️ Botdan foydalanish uchun quyidagi kanallarga obuna bo'lishingiz shart!",{
+                parse_mode: "HTML",
+                reply_markup: channel_menu,
+            })
+        }else {
+            await next()
+        }
+
+
+
+
+    }else{
+        await next()
+    }
+
+
+
+
+
+})
 
 
 

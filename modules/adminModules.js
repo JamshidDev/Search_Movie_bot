@@ -105,7 +105,7 @@ async function upload_movie(conversation, ctx){
                 ctx = await conversation.wait();
             } while (!ctx.message?.video);
         }
-        movie.url = ctx.message.video.thumbnail.file_id;
+        movie.url = ctx.message.video.file_id;
         ctx.session.session_db.movie.movie_list.push(movie)
 
     }

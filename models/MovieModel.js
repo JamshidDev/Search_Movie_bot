@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 
 const MovieSchema = mongoose.Schema({
     code: {
-        type: Number,
+        type: String,
         required: true,
     },
     movies: {

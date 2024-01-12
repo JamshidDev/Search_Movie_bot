@@ -15,8 +15,34 @@ const store = async (data) => {
     }
 }
 
+const search_movie_by_code = async (code) => {
+    try {
+        let result =  await Movie.findOne({
+            code:code,
+            active:true,
+        })
+        return {
+            status:true,
+            data:result
+        };
+
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return {
+            status:false,
+            movies:[]
+        };
+    }
+}
+
+
+
 
 module.exports = {
     store,
+    search_movie_by_code
 
 }

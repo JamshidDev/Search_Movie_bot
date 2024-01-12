@@ -20,6 +20,10 @@ const index_item = async (data)=>{
         return false
     }
 }
+
+
+
+
 const store_item = async (data) => {
     try {
         const existChannel =await CHANNEL.findOne({telegram_id:data.telegram_id});
@@ -54,6 +58,8 @@ const remove_item = async (id) => {
         return false
     }
 }
+
+
 
 
 
