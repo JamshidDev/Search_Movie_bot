@@ -25,16 +25,17 @@ bot.use(session({
     session_db: {
         initial: () => {
             return {
-                client: {
-                    phone: null,
-                    full_name: null,
-                },
+
                 movie:{
                     code:null,
                     movie_list:[],
                 },
                 channel_list:[],
                 all_channel_list:[],
+
+            //     admin sessions
+                admin_channels:[],
+                selected_channel:null,
             }
         },
         storage: new MemorySessionStorage(),

@@ -21,9 +21,52 @@ const index_item = async (data)=>{
     }
 }
 
+const all_active_item = async (data)=>{
+    try {
+        let channels =  await CHANNEL.find({
+            active:true,
+        })
+
+        return {
+            status:true,
+            channels,
+        }
+    }catch (error){
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return {
+            status:false,
+            channels:[],
+        }
+    }
+}
 
 
+const ad_channels = async(channel_id)=>{
+    try {
+        const existChannel =await CHANNEL.findOne({telegram_id:channel_id});
+        if(existChannel){
+            await CHANNEL.findByIdAndUpdate(existChannel._id, {
+                ad:!existChannel.ad
+            });
+        }else{
 
+        }
+
+       return {
+
+
+       }
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return false
+    }
+}
 const store_item = async (data) => {
     try {
         const existChannel =await CHANNEL.findOne({telegram_id:data.telegram_id});
@@ -66,6 +109,7 @@ const remove_item = async (id) => {
 module.exports = {
     store_item,
     remove_item,
-    index_item
+    index_item,
+    all_active_item
 
 }

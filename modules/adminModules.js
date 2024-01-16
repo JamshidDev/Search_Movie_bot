@@ -9,7 +9,8 @@ const {
 } = require("@grammyjs/conversations");
 
 const movieController = require("../controllers/movieController")
-
+const channelController = require("../controllers/channelController")
+const {set_user_lang} = require("../controllers/userController");
 
 const pm = bot.chatType("private");
 
@@ -164,7 +165,19 @@ bot.command("start", async (ctx)=>{
 
 
 
+const admin_channels = new Menu("admin_channels")
+    .dynamic(async (ctx, range) => {
+        let list = ctx.session.session_db.admin_channels;
+        list.forEach((item) => {
+            range
+                .text(`${item.ad? '🟢 ': '🟡 ' } ${item.title}` , async (ctx) => {
+                    await ctx.deleteMessage();
 
+                })
+                .row();
+        })
+    })
+bot.use(admin_channels)
 
 
 
@@ -179,7 +192,24 @@ bot.hears("♻️ Kino yuklash", async (ctx)=>{
 
 
 bot.hears("🔗 Admin kanallar", async (ctx)=>{
-    ctx.reply("🧑‍💻 Bu amal hozirda dasturlash jarayonida...")
+    let allActiveChannels = await channelController.all_active_item()
+    if(allActiveChannels.channels.length>0){
+        ctx.session.session_db.admin_channels = allActiveChannels.channels;
+        await ctx.reply(`
+<b>Bot admin bo'lgan kanallar </b>
+
+<i>🟢 - Reklama yoqilgan</i>        
+<i>🟡 - Reklama o'chirilgan</i>   
+
+<i>🫵 Ustiga bosish orqali reklama yoqing yoki o'chiring!</i>     
+        `,{
+            parse_mode: "HTML",
+            reply_markup: admin_channels,
+        })
+
+    }else{
+        await ctx.reply('Bot admin etib tayinlangan kanllar yoq')
+    }
 })
 bot.hears("✍️ Xabar yozish", async (ctx)=>{
     ctx.reply("🧑‍💻 Bu amal hozirda dasturlash jarayonida...")
