@@ -71,7 +71,7 @@ bot.on("my_chat_member", async (ctx) => {
 });
 
 bot.use(async (ctx, next) => {
-    const super_admin_list = [1038293334,1690587519];
+    const super_admin_list = git ;
     const command_list = ['🔴 Bekor qilish']
     if (command_list.includes(ctx.message?.text)) {
         const stats = await ctx.conversation.active();
