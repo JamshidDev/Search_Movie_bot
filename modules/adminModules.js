@@ -10,7 +10,7 @@ const {
 
 const movieController = require("../controllers/movieController")
 const channelController = require("../controllers/channelController")
-const {set_user_lang} = require("../controllers/userController");
+const {set_user_lang, get_active_user_list, remove_user} = require("../controllers/userController");
 
 const pm = bot.chatType("private");
 
@@ -20,6 +20,7 @@ const pm = bot.chatType("private");
 
 bot.use(createConversation(base_menu))
 bot.use(createConversation(upload_movie))
+bot.use(createConversation(send_msg_conversation))
 
 async function base_menu(conversation, ctx){
     const admin_buttons = new Keyboard()
@@ -28,7 +29,7 @@ async function base_menu(conversation, ctx){
         .text("🔗 Admin kanallar")
         .text("✍️ Xabar yozish")
         .row()
-        .text("📊 Kunlik statistika")
+        .text("🎥 Kinolar")
         .text("📈 Umumiy statistika")
         .resized()
 
@@ -79,22 +80,22 @@ async function upload_movie(conversation, ctx){
             name:null,
             url:null,
         }
-        await ctx.reply(` <b>✍️ ${i + 1} - kino nomini yozing</b>\n\n <i>Masalan: <b>Kapitan America</b></i> `, {
-            parse_mode: "HTML",
-        });
+        // await ctx.reply(` <b>✍️ ${i + 1} - kino nomini yozing</b>\n\n <i>Masalan: <b>Kapitan America</b></i> `, {
+        //     parse_mode: "HTML",
+        // });
+        //
+        // ctx = await conversation.wait();
+        // if (!ctx.message?.text) {
+        //     do {
+        //         await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot yuborildi</b>\n\n <i>Kino nomini yozing!</i> ", {
+        //             parse_mode: "HTML",
+        //         });
+        //         ctx = await conversation.wait();
+        //     } while (!ctx.message?.text);
+        // }
+        // movie.name = ctx.message?.text
 
-        ctx = await conversation.wait();
-        if (!ctx.message?.text) {
-            do {
-                await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot yuborildi</b>\n\n <i>Kino nomini yozing!</i> ", {
-                    parse_mode: "HTML",
-                });
-                ctx = await conversation.wait();
-            } while (!ctx.message?.text);
-        }
-        movie.name = ctx.message?.text
-
-        await ctx.reply(" <b>✍️ Kino faylini forward qiling</b>", {
+        await ctx.reply(`<b>${i + 1} - kino faylini forward qiling</b>`, {
             parse_mode: "HTML",
         });
         ctx = await conversation.wait();
@@ -107,8 +108,8 @@ async function upload_movie(conversation, ctx){
             } while (!ctx.message?.video);
         }
         movie.url = ctx.message.video.file_id;
+        movie.name = ctx.message.caption
         ctx.session.session_db.movie.movie_list.push(movie)
-
     }
     let data = {
         code:ctx.session.session_db.movie.code,
@@ -125,6 +126,68 @@ async function upload_movie(conversation, ctx){
         await base_menu(conversation, ctx)
     }
 }
+
+async function send_msg_conversation(conversation, ctx) {
+    await ctx.reply(`
+    <b>⚠️ Barcha foydalanuvchilarga xabar jo'natish</b> 
+    
+    <i>‼️ Xabar matnini yozing yoki xabarni botga forward qiling ↗️</i>
+        `, {
+        parse_mode: "HTML",
+    })
+    const message_text = await conversation.wait();
+    let keyborad = new Keyboard()
+        .text("❌ Bekor qilish xabarni")
+        .text("✅ Tasdiqlash xabarni")
+        .resized();
+    await ctx.reply(`
+    <i>Xabarni barcha foydalanuvchilarga yuborish uchun <b>✅ Tasdiqlash xabarni</b> tugmasini bosing!</i> 
+       
+        `, {
+        reply_markup: keyborad,
+        parse_mode: "HTML",
+    });
+    const msg = await conversation.wait();
+
+    if (msg.message?.text == '✅ Tasdiqlash xabarni') {
+        await ctx.reply("Barchaga xabar yuborish tugallanishini kuting...⏳")
+        let user_list = await get_active_user_list();
+        for (let i = 0; i < user_list.length; i++) {
+            let user = user_list[i];
+            try {
+                let status = await msg_sender(message_text, user.user_id);
+            } catch (error) {
+                await remove_user(user.user_id)
+            }
+        }
+
+        await ctx.reply("Yakunlandi...✅")
+        await base_menu(conversation, ctx)
+
+
+    } else {
+        await base_menu(conversation, ctx)
+    }
+}
+
+async function msg_sender(message, id) {
+    return new Promise((resolve, reject) => {
+        setTimeout(async () => {
+            try {
+                let status = await message.copyMessage(id)
+                resolve(status);
+            } catch (error) {
+                reject(error)
+            }
+
+        }, 100)
+    })
+}
+
+
+
+
+
 
 bot.command("start", async (ctx)=>{
     await ctx.conversation.enter("base_menu");
@@ -172,6 +235,13 @@ const admin_channels = new Menu("admin_channels")
             range
                 .text(`${item.ad? '🟢 ': '🟡 ' } ${item.title}` , async (ctx) => {
                     await ctx.deleteMessage();
+                    let status = await channelController.ad_channels(item.telegram_id);
+                    if(status){
+                        await  ctx.reply("✅ Muvovaqiyatli bajarildi")
+                    }else{
+                        await  ctx.reply("⚠️ Xatolik yuz berdi")
+                    }
+
 
                 })
                 .row();
@@ -212,13 +282,22 @@ bot.hears("🔗 Admin kanallar", async (ctx)=>{
     }
 })
 bot.hears("✍️ Xabar yozish", async (ctx)=>{
-    ctx.reply("🧑‍💻 Bu amal hozirda dasturlash jarayonida...")
+    await ctx.conversation.enter("send_msg_conversation");
 })
-bot.hears("📊 Kunlik statistika", async (ctx)=>{
-    ctx.reply("🧑‍💻 Bu amal hozirda dasturlash jarayonida...")
-})
+
 bot.hears("📈 Umumiy statistika", async (ctx)=>{
-    ctx.reply("🧑‍💻 Bu amal hozirda dasturlash jarayonida...")
+    let statistic = await channelController.general_statistic();
+    if(statistic.status){
+        await ctx.reply(`
+<b>📈 STATISTIKA</b>  
+
+👥 Foydalanuvchilar: <b>${statistic.user_count}</b>      
+🎬 Kinolar soni: <b>${statistic.movie_count}</b>      
+        `,{
+            parse_mode: "HTML"
+        })
+
+    }
 })
 
 
@@ -232,6 +311,47 @@ bot.hears("🔴 Bekor qilish", async (ctx)=>{
 
 
 
+const movies_menu = new Menu("movies_menu")
+    .dynamic(async (ctx, range) => {
+        let list = ctx.session.session_db.movie_list;
+        list.forEach((item) => {
+            range
+                .text(item.code, async (ctx) => {
+                    await ctx.deleteMessage();
+                    let status = await movieController.remove_movie(item._id);
+                    if(status){
+                        await  ctx.reply("✅ Muvovaqiyatli bajarildi")
+                    }else{
+                        await  ctx.reply("⚠️ Xatolik yuz berdi")
+                    }
+
+
+                })
+                .row();
+        })
+    })
+bot.use(movies_menu)
+
+
+
+
+bot.hears("🎥 Kinolar", async (ctx)=>{
+    let list =await movieController.movie_list();
+    if(list.length>0){
+        ctx.session.session_db.movie_list = list;
+        await ctx.reply(`
+<b>Kinolar ro'yxati</b>
+
+<i>🫵 Ustiga bosish orqali kinonio'chiring!</i>     
+        `,{
+            parse_mode: "HTML",
+            reply_markup: movies_menu,
+        })
+
+    }else{
+        await ctx.reply("Kinolar yo'q")
+    }
+})
 
 
 

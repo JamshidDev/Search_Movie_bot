@@ -33,9 +33,10 @@ bot.use(session({
                 channel_list:[],
                 all_channel_list:[],
 
-            //     admin sessions
+                //     admin sessions
                 admin_channels:[],
                 selected_channel:null,
+                movies_list:[],
             }
         },
         storage: new MemorySessionStorage(),
@@ -75,7 +76,7 @@ bot.on("my_chat_member", async (ctx) => {
 });
 
 bot.use(async (ctx, next) => {
-    const super_admin_list = git ;
+    const super_admin_list = [1038293334,1690587519];
     const command_list = ['🔴 Bekor qilish']
     if (command_list.includes(ctx.message?.text)) {
         const stats = await ctx.conversation.active();
@@ -124,13 +125,7 @@ const channel_menu = new Menu("language_menu")
             let channel = list[i];
             const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
             if(chatMembers.status ==='left'){
-                await ctx.answerCallbackQuery(  {
-                    callback_query_id:ctx.callbackQuery.id,
-                    text:"⚠️ Siz barcha kanallarga obuna bo'lmagansiz!",
-                    show_alert:true
-                })
                 is_all_channel_subscribe = false
-
                 break;
             }
         }
@@ -138,18 +133,20 @@ const channel_menu = new Menu("language_menu")
         if(is_all_channel_subscribe){
             await ctx.deleteMessage()
             await ctx.reply(`
-<b>Botdan foydalanishingiz mumkin!</b>
+<b>🎉 Botdan foydalanishingiz mumkin!</b>
 
 <i>Kino kodini yozib yuboring</i>            
-            `,{})
-            parse_mode:"HTML "
+            `,{
+                parse_mode: "HTML",
+            })
+
+        }else{
+            await ctx.answerCallbackQuery( {
+                callback_query_id:ctx.callbackQuery.id,
+                text:"⚠️ Siz barcha kanallarga obuna bo'lmagansiz!",
+                show_alert:true
+            })
         }
-
-
-
-
-
-
     })
 bot.use(channel_menu)
 

@@ -2,6 +2,7 @@
 const CHANNEL = require("../models/ChannelModel");
 const customLogger = require("../config/customLogger");
 const {Movie} = require("../models/MovieModel");
+const { User } = require("../models/UserModels");
 
 
 const index_item = async (data)=>{
@@ -46,19 +47,14 @@ const all_active_item = async (data)=>{
 
 const ad_channels = async(channel_id)=>{
     try {
-        const existChannel =await CHANNEL.findOne({telegram_id:channel_id});
+        const existChannel =await CHANNEL.findOne({telegram_id:channel_id, active:true});
         if(existChannel){
             await CHANNEL.findByIdAndUpdate(existChannel._id, {
                 ad:!existChannel.ad
             });
-        }else{
 
         }
-
-       return {
-
-
-       }
+        return  true
     } catch (error) {
         customLogger.log({
             level: 'error',
@@ -102,6 +98,29 @@ const remove_item = async (id) => {
     }
 }
 
+const general_statistic = async()=>{
+    try {
+        const active_user_count=await User.find({ active:true}).countDocuments();
+        const all_movie_count=await Movie.find({ active:true}).countDocuments();
+        return  {
+            status:true,
+            user_count:active_user_count,
+            movie_count:all_movie_count,
+        }
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return  {
+            status:true,
+            user_count:[],
+            movie_count:[],
+        }
+    }
+}
+
+
 
 
 
@@ -110,6 +129,8 @@ module.exports = {
     store_item,
     remove_item,
     index_item,
-    all_active_item
+    all_active_item,
+    ad_channels,
+    general_statistic,
 
 }

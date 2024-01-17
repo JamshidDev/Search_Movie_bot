@@ -104,12 +104,7 @@ pm.on("msg:text", async (ctx) => {
         let count_movies = movies.length;
         for (let i = 0; i < count_movies; i++) {
             await ctx.replyWithVideo(movies[i].url, {
-                caption: `
-🎥 ${movies[i].name}   
-
-<i>🤖 Barcha kinolar bizning botimizda</i>
-<a href="tg://user?id=${ctx.me.id}">TarjimaTV_HD_KINObot</a>           
-                `,
+                caption:movies[i].name || ' ',
                 parse_mode: "HTML"
             })
         }

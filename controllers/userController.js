@@ -69,10 +69,21 @@ const set_user_lang = async (data) => {
     }
 }
 
+const get_active_user_list = async (data) => {
+    try {
+        return  await User.find({ active: true });
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+    }
+}
 
 module.exports = {
     register_user,
     remove_user,
     check_user,
     set_user_lang,
+    get_active_user_list,
 }
