@@ -150,7 +150,7 @@ const channel_menu = new Menu("language_menu")
     })
 bot.use(channel_menu)
 
-bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async (ctx, next)=>{
+bot.filter(async (ctx)=> !ctx.config.super_admin).filter(async (ctx)=>ctx?.message?.text!=='/start').chatType("private").use(async (ctx, next)=>{
     let channel_list = await channelController.index_item({
         active:true,
         ad:true
