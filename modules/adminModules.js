@@ -29,8 +29,10 @@ async function base_menu(conversation, ctx){
         .text("🔗 Admin kanallar")
         .text("✍️ Xabar yozish")
         .row()
-        .text("🎥 Kinolar")
         .text("📈 Umumiy statistika")
+        .text("📊 Kunlik statistika")
+        .row()
+        .text("🎥 Kinolar")
         .resized()
 
     await ctx.reply(`⚡️ Asosy menyu ⚡️`,{
@@ -63,7 +65,7 @@ async function upload_movie(conversation, ctx){
         parse_mode: "HTML",
     });
     ctx = await conversation.wait();
-
+    ctx.session.session_db.movie.movie_list = [];
     if(!(ctx.message?.text && !isNaN(ctx.message.text) && ctx.message.text != '0')){
         do {
             await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot kiritildi</b>\n\n <i>Kino sonini kiriting!</i> ", {
@@ -115,7 +117,7 @@ async function upload_movie(conversation, ctx){
         code:ctx.session.session_db.movie.code,
         movies:ctx.session.session_db.movie.movie_list,
     }
-    console.log(data)
+    console.log(data.movies)
     ctx.reply("⏰ Yuklanmoqda...")
     const status = await movieController.store(data);
     if(status){
@@ -290,6 +292,21 @@ bot.hears("📈 Umumiy statistika", async (ctx)=>{
     if(statistic.status){
         await ctx.reply(`
 <b>📈 STATISTIKA</b>  
+
+👥 Foydalanuvchilar: <b>${statistic.user_count}</b>      
+🎬 Kinolar soni: <b>${statistic.movie_count}</b>      
+        `,{
+            parse_mode: "HTML"
+        })
+
+    }
+})
+
+bot.hears("📊 Kunlik statistika", async (ctx)=>{
+    let statistic = await channelController.today_statistic();
+    if(statistic.status){
+        await ctx.reply(`
+<b>📊 Kunlik statistika</b>  
 
 👥 Foydalanuvchilar: <b>${statistic.user_count}</b>      
 🎬 Kinolar soni: <b>${statistic.movie_count}</b>      

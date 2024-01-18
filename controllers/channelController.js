@@ -120,7 +120,44 @@ const general_statistic = async()=>{
     }
 }
 
+const today_statistic = async()=>{
+    try {
+        let today = new Date().toLocaleDateString("sv-SE");
+        const startDate = new Date(today);
+        const endDate = new Date(today);
+        endDate.setDate(startDate.getDate() + 1);
 
+        let today_users= await User.find({
+            created_at: {
+                $gte: startDate,
+                $lte: endDate,
+            },
+            active:true,
+        }).countDocuments();
+        let today_movies= await Movie.find({
+            created_at: {
+                $gte: startDate,
+                $lte: endDate,
+            },
+            active:true,
+        }).countDocuments();
+        return  {
+            status:true,
+            user_count:today_users,
+            movie_count:today_movies,
+        }
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return  {
+            status:true,
+            user_count:[],
+            movie_count:[],
+        }
+    }
+}
 
 
 
@@ -132,5 +169,6 @@ module.exports = {
     all_active_item,
     ad_channels,
     general_statistic,
+    today_statistic,
 
 }
