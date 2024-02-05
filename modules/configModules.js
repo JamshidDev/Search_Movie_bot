@@ -37,6 +37,8 @@ bot.use(session({
                 admin_channels:[],
                 selected_channel:null,
                 movies_list:[],
+                currentPage :1,
+                max_page_count:1,
             }
         },
         storage: new MemorySessionStorage(),
@@ -150,52 +152,52 @@ const channel_menu = new Menu("language_menu")
     })
 bot.use(channel_menu)
 
-bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async (ctx, next)=>{
-    let channel_list = await channelController.index_item({
-        active:true,
-        ad:true
-    })
-
-    if(channel_list.length>0){
-        let list = channel_list.map((item)=>{
-            return {
-                channel_id:item.telegram_id,
-                _id:item._id,
-                username:item.username
-            }
-        })
-
-        ctx.session.session_db.channel_list = [];
-        ctx.session.session_db.all_channel_list = list;
-        for(let i=0; i<list.length; i++){
-            let channel = list[i];
-            const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
-            if(chatMembers.status ==='left'){
-                ctx.session.session_db.channel_list.push(channel)
-            }
-        }
-
-        if(ctx.session.session_db.channel_list.length>0){
-            await ctx.reply("⚠️ Botdan foydalanish uchun quyidagi kanallarga obuna bo'lishingiz shart!",{
-                parse_mode: "HTML",
-                reply_markup: channel_menu,
-            })
-        }else {
-            await next()
-        }
-
-
-
-
-    }else{
-        await next()
-    }
-
-
-
-
-
-})
+// bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async (ctx, next)=>{
+//     let channel_list = await channelController.index_item({
+//         active:true,
+//         ad:true
+//     })
+//
+//     if(channel_list.length>0){
+//         let list = channel_list.map((item)=>{
+//             return {
+//                 channel_id:item.telegram_id,
+//                 _id:item._id,
+//                 username:item.username
+//             }
+//         })
+//
+//         ctx.session.session_db.channel_list = [];
+//         ctx.session.session_db.all_channel_list = list;
+//         for(let i=0; i<list.length; i++){
+//             let channel = list[i];
+//             const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
+//             if(chatMembers.status ==='left'){
+//                 ctx.session.session_db.channel_list.push(channel)
+//             }
+//         }
+//
+//         if(ctx.session.session_db.channel_list.length>0){
+//             await ctx.reply("⚠️ Botdan foydalanish uchun quyidagi kanallarga obuna bo'lishingiz shart!",{
+//                 parse_mode: "HTML",
+//                 reply_markup: channel_menu,
+//             })
+//         }else {
+//             await next()
+//         }
+//
+//
+//
+//
+//     }else{
+//         await next()
+//     }
+//
+//
+//
+//
+//
+// })
 
 
 

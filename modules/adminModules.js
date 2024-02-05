@@ -1,4 +1,4 @@
-const { Composer, Keyboard} = require("grammy");
+const { Composer, Keyboard, session} = require("grammy");
 const { Menu, MenuRange } = require("@grammyjs/menu");
 const { I18n, hears } = require("@grammyjs/i18n");
 
@@ -311,38 +311,119 @@ bot.hears("🔴 Bekor qilish", async (ctx)=>{
 
 
 
-const movies_menu = new Menu("movies_menu")
+const movies_menu = new Menu("movies_menu", { onMenuOutdated: false} )
     .dynamic(async (ctx, range) => {
         let list = ctx.session.session_db.movie_list;
         list.forEach((item) => {
             range
                 .text(item.code, async (ctx) => {
-                    await ctx.deleteMessage();
+                    // await ctx.deleteMessage();
                     let status = await movieController.remove_movie(item._id);
                     if(status){
-                        await  ctx.reply("✅ Muvovaqiyatli bajarildi")
+                        await  ctx.reply("✅ Kino muvovaqiyatli o'chirildi")
                     }else{
                         await  ctx.reply("⚠️ Xatolik yuz berdi")
                     }
 
 
                 })
-                .row();
+                .row()
+
         })
     })
+    .dynamic(async (ctx, range) => {
+        let currentPage = ctx.session.session_db.currentPage;
+        let list = ["<<",`${currentPage}` ,">>"];
+        list.forEach((item) => {
+            range
+                .text(item, async (ctx) => {
+                    // await ctx.deleteMessage();
+                    // let status = await movieController.remove_movie(item._id);
+                    // if(status){
+                    //     await  ctx.reply("✅ Muvovaqiyatli bajarildi")
+                    // }else{
+                    //     await  ctx.reply("⚠️ Xatolik yuz berdi")
+                    // }
+                    // ctx.session.session_db.movie_list = [{
+                    //     code:'343',
+                    //     _id:2324,
+                    // }]
+                    let current_page = ctx.session.session_db.currentPage;
+                    let max_page =  ctx.session.session_db.max_page_count;
+                    if(item===">>"){
+
+                        if(current_page<max_page){
+                            current_page++;
+                            ctx.session.session_db.currentPage =current_page;
+
+                            let res_data = await movieController.pagination_movie_list(current_page);
+                            ctx.session.session_db.movie_list = res_data.data;
+                            await ctx.menu.update({ immediate: true });
+                        }else{
+                            await ctx.answerCallbackQuery( {
+                                callback_query_id:ctx.callbackQuery.id,
+                                text:"⚠️ Siz oxirgi sahifadasiz!",
+                                show_alert:true
+                            })
+                        }
+
+
+
+                    }else if(item==="<<"){
+                        if(current_page >1){
+                            current_page--;
+                            ctx.session.session_db.currentPage =current_page;
+                            let res_data = await movieController.pagination_movie_list(current_page);
+                            ctx.session.session_db.movie_list = res_data.data;
+                            await ctx.menu.update({ immediate: true });
+                        }else{
+                            await ctx.answerCallbackQuery( {
+                                callback_query_id:ctx.callbackQuery.id,
+                                text:"⚠️ Siz birinchi sahifadasiz!",
+                                show_alert:true
+                            })
+                        }
+
+
+                    }else{
+                        await ctx.answerCallbackQuery( {
+                            callback_query_id:ctx.callbackQuery.id,
+                            text:"⚠️ Siz joriy sahifa raqamini bosdingiz!",
+                            show_alert:true
+                        })
+                    }
+
+                    // ctx.menu.update()
+
+
+                })
+
+        })
+    })
+
+    // .text('1')
+    // .text("2")
+    // .text("3")
+    // .text("4")
+    // .row();
 bot.use(movies_menu)
 
 
 
 
 bot.hears("🎥 Kinolar", async (ctx)=>{
-    let list =await movieController.movie_list();
-    if(list.length>0){
-        ctx.session.session_db.movie_list = list;
+     ctx.session.session_db.currentPage = 1;
+    let res_data =await movieController.pagination_movie_list(ctx.session.session_db.currentPag);
+    ctx.session.session_db.max_page_count = res_data.max_page;
+    let movie_count = res_data.total_count;
+
+    if(res_data.data.length>0){
+        ctx.session.session_db.movie_list = res_data.data;
         await ctx.reply(`
 <b>Kinolar ro'yxati</b>
-
-<i>🫵 Ustiga bosish orqali kinonio'chiring!</i>     
+<i>🎥 Kinolar soni: <b>${movie_count}</b></i>
+<i>🫵 Ustiga bosish orqali kinoni o'chiring!</i>
+ 
         `,{
             parse_mode: "HTML",
             reply_markup: movies_menu,
