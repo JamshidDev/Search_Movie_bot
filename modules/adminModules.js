@@ -10,7 +10,7 @@ const {
 
 const movieController = require("../controllers/movieController")
 const channelController = require("../controllers/channelController")
-const {set_user_lang, get_active_user_list, remove_user} = require("../controllers/userController");
+const { get_active_user_list, remove_user} = require("../controllers/userController");
 
 const pm = bot.chatType("private");
 
@@ -21,6 +21,7 @@ const pm = bot.chatType("private");
 bot.use(createConversation(base_menu))
 bot.use(createConversation(upload_movie))
 bot.use(createConversation(send_msg_conversation))
+bot.use(createConversation(delete_movie_by_code))
 
 async function base_menu(conversation, ctx){
     const admin_buttons = new Keyboard()
@@ -33,11 +34,46 @@ async function base_menu(conversation, ctx){
         .text("📊 Kunlik statistika")
         .row()
         .text("🎥 Kinolar")
+        .text("🗑 O'chirish")
         .resized()
 
     await ctx.reply(`⚡️ Asosy menyu ⚡️`,{
         reply_markup:admin_buttons
     })
+}
+async function delete_movie_by_code(conversation, ctx){
+    const action_btn = new Keyboard()
+        .text("🔴 Bekor qilish")
+        .resized()
+
+    await ctx.reply(`<b>🗑 Kinoni o'chirish uchun kino kodini yuboring</b>
+<i>Masalan: <b>456</b></i>
+`,{
+        reply_markup:action_btn,
+        parse_mode:"HTML"
+    })
+
+    ctx = await conversation.wait();
+    if (!ctx.message?.text) {
+        do {
+            await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot kiritildi</b>\n\n <i>Kino kodini kiriting!</i> ", {
+                parse_mode: "HTML",
+            });
+            ctx = await conversation.wait();
+        } while (!ctx.message?.text);
+    }
+
+    let movie_code = await ctx.message.text;
+    let res_status = await movieController.delete_movie_by_code(movie_code);
+
+    if(res_status){
+        await ctx.reply(`✅ Kino muvofaqiyatli o'chirildi!`)
+    }else{
+        await ctx.reply(`❌ Kodga mos kino topilmadi!`)
+    }
+
+    await base_menu(conversation, ctx)
+
 }
 
 async function upload_movie(conversation, ctx){
@@ -322,7 +358,9 @@ bot.hears("🔴 Bekor qilish", async (ctx)=>{
     await ctx.conversation.enter("base_menu");
 })
 
-
+bot.hears("🗑 O'chirish", async (ctx)=>{
+    await ctx.conversation.enter("delete_movie_by_code");
+})
 
 
 
