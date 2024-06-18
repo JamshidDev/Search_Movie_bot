@@ -11,6 +11,7 @@ const {
 const movieController = require("../controllers/movieController")
 const channelController = require("../controllers/channelController")
 const {set_user_lang, get_active_user_list, remove_user} = require("../controllers/userController");
+const {delete_movie_by_code} = require("../controllers/movieController");
 
 const pm = bot.chatType("private");
 
@@ -21,7 +22,8 @@ const pm = bot.chatType("private");
 bot.use(createConversation(base_menu))
 bot.use(createConversation(upload_movie))
 bot.use(createConversation(send_msg_conversation))
-bot.use(createConversation(add_link_conversation))
+bot.use(createConversation(delete_movie_by_code))
+bot.use(createConversation(delete_movie_by_code))
 
 async function base_menu(conversation, ctx){
     const admin_buttons = new Keyboard()
@@ -33,8 +35,10 @@ async function base_menu(conversation, ctx){
         .text("📈 Umumiy statistika")
         .text("📊 Kunlik statistika")
         .row()
-        .text("🎥 Kinolar")
+        .text("🗑 O'chirish")
         .text("🔗 Link ulash")
+        .row()
+        .text("🎥 Kinolar")
         .resized()
 
     await ctx.reply(`⚡️ Asosy menyu ⚡️`,{
@@ -184,66 +188,11 @@ async function msg_sender(message, id) {
                 reject(error)
             }
 
-        }, 10)
+        }, 100)
     })
 }
 
-async function add_link_conversation(conversation, ctx){
-    let link_details = {
-        name:null,
-        link:null,
-    }
-    const cancel_btn = new Keyboard()
-        .text("🔴 Bekor qilish")
-        .resized();
-    await ctx.reply(" <b>✍️ Link uchun nom yozing</b>\n\n <i>Masalan: <b>Translate bot</b></i> ", {
-        parse_mode: "HTML",
-        reply_markup:cancel_btn
-    });
-    ctx = await conversation.wait();
-    if (!(ctx.message?.text)) {
-        do {
-            await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot kiritildi</b>\n\n <i>Link uchun nom yozing!</i> ", {
-                parse_mode: "HTML",
-            });
-            ctx = await conversation.wait();
-        } while (!(ctx.message?.text));
-    }
-    link_details.name = ctx.message.text;
-    await ctx.reply(" <b>✍️ Linkni yuboring</b>\n\n <i>Masalan: <b>https://t.me/aquasoffbot</b></i> ", {
-        parse_mode: "HTML",
-        reply_markup:cancel_btn
-    });
-    ctx = await conversation.wait();
-    if (!(ctx.message?.text)) {
-        do {
-            await ctx.reply("⚠️ <b>Noto'g'ri ma'lumot kiritildi</b>\n\n <i>Linkni yuboring</i> ", {
-                parse_mode: "HTML",
-            });
-            ctx = await conversation.wait();
-        } while (!(ctx.message?.text));
-    }
-    link_details.link = ctx.message.text;
-    console.log(link_details)
-    const uniqueId =  Date.now() + Math.floor(Math.random() * 10000);
-    let data = {
-        telegram_id:uniqueId,
-        user_id:0,
-        title:link_details.name,
-        username:link_details.link,
-        type:'unknown',
-        new_chat:{},
-    }
-    const status =  await channelController.store_item(data)
-    if(status){
-        await ctx.reply("✅ Muvofaqiyatli yuklandi...");
-        await base_menu(conversation, ctx)
-    }else{
-        await ctx.reply("⚠️ Server xatosi")
-        await base_menu(conversation, ctx)
-    }
 
-}
 
 
 
@@ -379,6 +328,9 @@ bot.hears("🔴 Bekor qilish", async (ctx)=>{
     await ctx.conversation.enter("base_menu");
 })
 
+bot.hears("🗑 O'chirish", async (ctx)=>{
+    await ctx.conversation.enter("delete_movie_by_code");
+})
 bot.hears("🔗 Link ulash", async (ctx)=>{
     await ctx.conversation.enter("add_link_conversation");
 })

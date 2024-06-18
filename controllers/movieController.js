@@ -59,7 +59,7 @@ const pagination_movie_list = async (page) => {
 
 const remove_movie = async (id) => {
     try {
-        await Movie.findByIdAndUpdate(id, {
+         await Movie.findByIdAndUpdate(id, {
             active: false,
         });
 
@@ -74,6 +74,24 @@ const remove_movie = async (id) => {
     }
 }
 
+
+const delete_movie_by_code = async (code) => {
+    try {
+        let status =  await Movie.findOneAndUpdate({
+            code,
+            active:true
+        }, {
+            active: false,
+        });
+        return !!status;
+    } catch (error) {
+        customLogger.log({
+            level: 'error',
+            message: error
+        });
+        return false
+    }
+}
 
 const search_movie_by_code = async (code) => {
     try {
@@ -107,5 +125,6 @@ module.exports = {
     movie_list,
     remove_movie,
     pagination_movie_list,
+    delete_movie_by_code,
 
 }
