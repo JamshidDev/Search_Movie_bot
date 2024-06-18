@@ -111,9 +111,10 @@ bot.use(async (ctx, next) => {
 const channel_menu = new Menu("language_menu")
     .dynamic(async (ctx, range) => {
         let list =ctx.session.session_db.channel_list
+
         list.forEach((item) => {
             range
-                .url("➕ Obuna bo'lish", `https://t.me/${item.username}`)
+                .url("➕ Obuna bo'lish", item.user_id === 0? item.username:`https://t.me/${item.username}`)
                 .row()
 
         })
@@ -125,11 +126,17 @@ const channel_menu = new Menu("language_menu")
 
         for(let i=0; i<list.length; i++){
             let channel = list[i];
-            const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
-            if(chatMembers.status ==='left'){
-                is_all_channel_subscribe = false
+            if(channel.user_id === 0){
+                is_all_channel_subscribe = true
                 break;
+            }else{
+                const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
+                if(chatMembers.status ==='left'){
+                    is_all_channel_subscribe = false
+                    break;
+                }
             }
+
         }
 
         if(is_all_channel_subscribe){
@@ -150,21 +157,23 @@ const channel_menu = new Menu("language_menu")
             })
         }
     })
-bot.use(channel_menu)
+bot.filter(async (ctx)=> !ctx.config.super_admin).use(channel_menu)
 
 
-bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async (ctx, next)=>{
+bot.chatType("private").filter(async (ctx)=> !ctx.config.super_admin).use(async (ctx, next)=>{
     let channel_list = await channelController.index_item({
         active:true,
         ad:true
     })
+    const originalChannels = channel_list.filter(v=> v.user_id !== 0)
 
-    if(channel_list.length>0){
+    if(originalChannels.length>0){
         let list = channel_list.map((item)=>{
             return {
                 channel_id:item.telegram_id,
                 _id:item._id,
-                username:item.username
+                username:item.username,
+                user_id:item.user_id
             }
         })
 
@@ -172,13 +181,21 @@ bot.filter(async (ctx)=> !ctx.config.super_admin).chatType("private").use(async 
         ctx.session.session_db.all_channel_list = list;
         for(let i=0; i<list.length; i++){
             let channel = list[i];
-            const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
-            if(chatMembers.status ==='left'){
-                ctx.session.session_db.channel_list.push(channel)
-            }
-        }
 
-        if(ctx.session.session_db.channel_list.length>0){
+            if(channel.user_id === 0){
+                ctx.session.session_db.channel_list.push(channel)
+            }else{
+                const chatMembers = await ctx.chatMembers.getChatMember(channel.channel_id, ctx.from.id)
+                if(chatMembers.status ==='left'){
+                    ctx.session.session_db.channel_list.push(channel)
+                }
+            }
+
+
+        }
+        const originChannelsList = ctx.session.session_db.channel_list.filter(v=>v.user_id !==0)
+
+        if(originChannelsList.length>0){
             await ctx.reply("⚠️ Botdan foydalanish uchun quyidagi kanallarga obuna bo'lishingiz shart!",{
                 parse_mode: "HTML",
                 reply_markup: channel_menu,
